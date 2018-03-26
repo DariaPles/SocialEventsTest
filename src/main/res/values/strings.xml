@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Event Intent</string>
+    <string name="event_title">Event title</string>
+    <string name="event_title_label">Title</string>
+    <string name="event_details_label">Details</string>
+    <string name="event_solved_label">solved</string>
+    <string name="date_picker_title">Date of event:</string>
+</resources>
