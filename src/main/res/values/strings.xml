@@ -5,4 +5,8 @@
     <string name="event_details_label">Details</string>
     <string name="event_solved_label">solved</string>
     <string name="date_picker_title">Date of event:</string>
+    <string name="new_event">New Crime</string>
+    <string name="show_subtitle">Show Subtitle</string>
+    <string name="hide_subtitle">Hide Subtitle</string>
+    <string name="subtitle_format">%1$s crimes</string>
 </resources>

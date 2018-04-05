@@ -45,7 +45,11 @@ public class EventFragment extends Fragment {
 
     }
 
-    @Override
+    @Override public void onPause() {
+        super.onPause();
+        EventLab.get(getActivity()).updateEvent(mEvent);
+    }
+        @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View v = inflater.inflate(R.layout.fragment_event, container, false);
 
