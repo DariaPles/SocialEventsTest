@@ -54,10 +54,10 @@ public class EventListFragment extends Fragment {
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_item_new_event:
-                Event crime = new Event();
-                EventLab.get(getActivity()).addEvent(crime);
+                //Event event = new Event();
+                //EventLab.get(getActivity()).addEvent(event);
                 Intent intent = EventPagerActivity
-                        .newIntent(getActivity(), crime.getId());
+                        .newIntent(getActivity(), null);
                 startActivity(intent);
                 return true;
             default:
@@ -121,14 +121,8 @@ public class EventListFragment extends Fragment {
         }
 
         @Override
-        public void onClick(View v) {
-            //Toast.makeText(getActivity(),mEvent.getTitle() + " clicked!",Toast.LENGTH_SHORT).show();
-
-            //System.out.println(this);
-            //System.out.println(getActivity());
-
+        public void onClick(View v) { ;
             Intent intent = EventPagerActivity.newIntent(getActivity(), mEvent.getId());
-           // startActivity(intent);
             startActivityForResult(intent,REQUEST_EVENT);
         }
     }
@@ -153,6 +147,10 @@ public class EventListFragment extends Fragment {
             Event event = mEvents.get(position);
             holder.bindEvent(event);
             positionChanged = position;
+        }
+
+        public void setEvents(List<Event> events){
+            mEvents = events;
         }
 
         @Override

@@ -45,6 +45,14 @@
             android:layout_marginRight="16dp"
             android:layout_weight="1" />
 
+        <Button android:id="@+id/event_save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="16dp"
+            android:layout_weight="1"
+            android:text="@string/event_save_label" />
+
         <CheckBox
             android:id="@+id/event_solved"
             android:layout_width="match_parent"

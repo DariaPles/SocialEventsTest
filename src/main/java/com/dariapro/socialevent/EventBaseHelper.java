@@ -22,6 +22,7 @@ public class EventBaseHelper extends SQLiteOpenHelper {
                EventTable.Cols.UUID + ", " +
                EventTable.Cols.TITLE + ", " +
                EventTable.Cols.DATE + ", " +
+               EventTable.Cols.TIME + ", " +
                EventTable.Cols.SOLVED + ")"
        );
     }

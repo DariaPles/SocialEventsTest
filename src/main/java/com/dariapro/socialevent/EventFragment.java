@@ -9,6 +9,9 @@ import android.support.v4.app.FragmentManager;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -21,7 +24,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 
-public class EventFragment extends Fragment {
+public class EventFragment extends Fragment{
 
     private static final String ARG_EVENT_ID = "com.dariapro.socialevent.event_id";
     private static final String DIALOG_DATE = "DialogDate";
@@ -33,21 +36,41 @@ public class EventFragment extends Fragment {
     private EditText mTitleField;
     private Button mDateButton;
     private Button mTimeButton;
+    private Button mSaveButton;
     private CheckBox mSolvedCheckBox;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //mEvent = new Event();
-
         UUID eventId = (UUID) getArguments().getSerializable(EventPagerActivity.EXTRA_EVENT_ID);
-        mEvent = EventLab.get(getActivity()).getEvent(eventId);
+        if(eventId != null) {
+            mEvent = EventLab.get(getActivity()).getEvent(eventId);
+        }
+        setHasOptionsMenu(true);
+    }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater menuInflater) {
+        super.onCreateOptionsMenu(menu,menuInflater);
+        menuInflater.inflate(R.menu.fragment_event, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_item_delete_event:
+                EventLab.get(getActivity()).deleteEvent(mEvent);
+                Intent intent = new Intent(getActivity(), EventListActivity.class);
+                startActivity(intent);
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Override public void onPause() {
         super.onPause();
-        EventLab.get(getActivity()).updateEvent(mEvent);
+        //EventLab.get(getActivity()).updateEvent(mEvent);
     }
         @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -102,6 +125,21 @@ public class EventFragment extends Fragment {
 //            }
 //        });
 
+            mSaveButton = v.findViewById(R.id.event_save);
+            mSaveButton.setOnClickListener(new View.OnClickListener() {
+
+                @Override
+                public void onClick(View v) {
+
+                    if(EventLab.get(getActivity()).getEvent(mEvent.getId()) != null){
+                        EventLab.get(getActivity()).updateEvent(mEvent);
+                    }
+                    else {
+                        EventLab.get(getActivity()).addEvent(mEvent);
+                    }
+                }
+            });
+
         mSolvedCheckBox = v.findViewById(R.id.event_solved);
         mSolvedCheckBox.setChecked(mEvent.isSolved());
         mSolvedCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -119,6 +157,12 @@ public class EventFragment extends Fragment {
         args.putSerializable(ARG_EVENT_ID, eventID);
 
         EventFragment eventFragment = new EventFragment();
+
+        if(eventID == null){
+            Event newEvent = new Event();
+            eventFragment.mEvent = newEvent;
+        }
+
         eventFragment.setArguments(args);
         return eventFragment;
     }
@@ -144,4 +188,5 @@ public class EventFragment extends Fragment {
     public void returnResult(){
         getActivity().setResult(Activity.RESULT_OK,null);
     }
+
 }

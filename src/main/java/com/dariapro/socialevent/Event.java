@@ -11,9 +11,15 @@ public class Event {
     private boolean mSolved;
 
     public Event(){
-        mId = UUID.randomUUID();
+        this(UUID.randomUUID());
+       // mId = UUID.randomUUID();
+       // mDate = new Date();
+       // mEventTime = new EventTime();
+    }
+
+    public Event(UUID id){
+        mId = id;
         mDate = new Date();
-        mEventTime = new EventTime();
     }
 
     public UUID getId() {

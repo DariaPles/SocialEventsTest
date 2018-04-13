@@ -11,6 +11,7 @@ import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.ViewParent;
+import android.widget.Toast;
 
 import java.util.List;
 import java.util.UUID;
@@ -27,7 +28,7 @@ public class EventPagerActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_event_pager);
 
-        UUID eventId = (UUID) getIntent().getSerializableExtra(EXTRA_EVENT_ID);
+        final UUID eventId = (UUID) getIntent().getSerializableExtra(EXTRA_EVENT_ID);
 
         mViewPager = findViewById(R.id.activity_event_pager_view_pager);
 
@@ -37,12 +38,20 @@ public class EventPagerActivity extends AppCompatActivity {
         mViewPager.setAdapter(new FragmentStatePagerAdapter(fragmentManager) {
             @Override
             public Fragment getItem(int position) {
-                Event event = mEvents.get(position);
-                return EventFragment.newInstance(event.getId());
+                if(eventId != null){
+                    Event event = mEvents.get(position);
+                    return EventFragment.newInstance(event.getId());
+                }
+                else{
+                    return EventFragment.newInstance(eventId);
+                }
             }
 
             @Override
             public int getCount() {
+                if(mEvents.size() == 0){
+                    return 1;
+                }
                 return mEvents.size();
             }
         });
@@ -52,6 +61,9 @@ public class EventPagerActivity extends AppCompatActivity {
                 mViewPager.setCurrentItem(i);
                 break;
             }
+        }
+        if(mEvents.size() == 0){
+            mViewPager.setCurrentItem(0);
         }
     }
 

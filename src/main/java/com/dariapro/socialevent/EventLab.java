@@ -19,13 +19,23 @@ import java.util.UUID;
 public class EventLab {
     public static EventLab sEventLab;
 
+    //private List<Event> mEvents = new ArrayList<Event>();
+
     private Context mContext;
     private SQLiteDatabase mDatabase;
 
     public void addEvent(Event event){
-       ContentValues values = getContentValues(event);
+        if(!event.getTitle().trim().equals("")) {
+            ContentValues values = getContentValues(event);
+            mDatabase.insert(EventTable.NAME, null, values);
+        }
+    }
 
-       mDatabase.insert(EventTable.NAME, null, values);
+    public void deleteEvent(Event event){
+        String uuidString = event.getId().toString();
+        mDatabase.delete(EventTable.NAME,
+                EventTable.Cols.UUID + " = ?",
+                new String[] { uuidString });
     }
 
     private static ContentValues getContentValues(Event event){
@@ -33,18 +43,42 @@ public class EventLab {
         values.put(EventTable.Cols.UUID, event.getId().toString());
         values.put(EventTable.Cols.DATE, event.getDate().getTime());
         values.put(EventTable.Cols.SOLVED, event.isSolved() ? 1: 0);
-        values.put(EventTable.Cols.TIME, event.getEventTime().toString());
+        values.put(EventTable.Cols.TIME, (String) null);
         values.put(EventTable.Cols.TITLE, event.getTitle());
         return values;
     }
 
     public List<Event> getEvents(){
-        return new ArrayList<>();
+        List<Event> events = new ArrayList<Event>();
+
+        EventCursorWrapper cursorWrapper = queryEvents(null,null);
+
+        try{
+            cursorWrapper.moveToFirst();
+            while(!cursorWrapper.isAfterLast()){
+                events.add(cursorWrapper.getEvent());
+                cursorWrapper.moveToNext();
+            }
+        } finally {
+            cursorWrapper.close();
+        }
+        return events;
     }
 
     public Event getEvent(UUID uuid){
+        EventCursorWrapper cursor = queryEvents(
+                EventTable.Cols.UUID + " = ?",
+                new String[] { uuid.toString() }    );
+        try {
+            if (cursor.getCount() == 0) {
+                return null;
+            }
+            cursor.moveToFirst();
+            return cursor.getEvent();
+        } finally {
+            cursor.close();
+        }
 
-        return null;
     }
 
     public void updateEvent(Event event) {
@@ -56,7 +90,7 @@ public class EventLab {
                 new String[] { uuidString });
     }
 
-    private Cursor queryCrimes(String whereClause, String[] whereArgs) {
+    private EventCursorWrapper queryEvents(String whereClause, String[] whereArgs) {
         Cursor cursor = mDatabase.query(
                 EventTable.NAME,
                 null, // Columns - null выбирает все столбцы
@@ -66,7 +100,7 @@ public class EventLab {
                 null, // having
                 null // orderBy
         );
-        return cursor;
+        return new EventCursorWrapper(cursor);
     }
 
     public static EventLab get(Context context){
@@ -80,9 +114,8 @@ public class EventLab {
         mContext = context.getApplicationContext();
         mDatabase = new EventBaseHelper(mContext)
                 .getWritableDatabase();
-
-
-//        for(int i = 0; i < 100; i++){
+        //mEvents = new ArrayList<Event>();
+//        for(int i = 0; i < 10; i++){
 //            Event event = new Event();
 //            event.setTitle("Event #"+i);
 //            event.setSolved(i%2 == 0);
