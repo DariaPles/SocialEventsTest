@@ -1,11 +1,24 @@
 package com.dariapro.socialevent;
 
 
+import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
@@ -18,7 +31,11 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 
+import java.io.File;
+import java.io.InputStream;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -30,14 +47,20 @@ public class EventFragment extends Fragment{
     private static final String DIALOG_DATE = "DialogDate";
     private static final int REQUEST_DATE = 0;
     private static final String DIALOG_TIME = "DialogTime";
-    private static final int REQUEST_TIME = 0;
+    private static final int REQUEST_TIME = 1;
+    private static final int REQUEST_PHOTO= 2;
+    private static final int DOWNLOAD_PHOTO= 3;
 
     private Event mEvent;
+    private File mPhotoFile;
     private EditText mTitleField;
     private Button mDateButton;
     private Button mTimeButton;
     private Button mSaveButton;
     private CheckBox mSolvedCheckBox;
+    private ImageButton mCameraButton;
+    private ImageButton mDownloadPicButton;
+    private ImageView mEventPicture;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -45,6 +68,7 @@ public class EventFragment extends Fragment{
         UUID eventId = (UUID) getArguments().getSerializable(EventPagerActivity.EXTRA_EVENT_ID);
         if(eventId != null) {
             mEvent = EventLab.get(getActivity()).getEvent(eventId);
+            mPhotoFile = EventLab.get(getActivity()).getPhotoFile(mEvent);
         }
         setHasOptionsMenu(true);
     }
@@ -149,7 +173,84 @@ public class EventFragment extends Fragment{
             }
         });
 
+        PackageManager packageManager = getActivity().getPackageManager();
+
+        mCameraButton = v.findViewById(R.id.take_event_picture_button);
+        mEventPicture = v.findViewById(R.id.event_picture);
+        updatePhotoView();
+        final Intent captureImage = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        boolean canTakePhoto = mPhotoFile != null &&
+                    captureImage.resolveActivity(packageManager) != null;
+        mCameraButton.setEnabled(canTakePhoto);
+        if (canTakePhoto) {
+            Uri uri = Uri.fromFile(mPhotoFile);
+            captureImage.putExtra(MediaStore.EXTRA_OUTPUT, uri);
+        }
+        mCameraButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    startActivityForResult(captureImage, REQUEST_PHOTO);
+                }
+        });
+
+        mDownloadPicButton = v.findViewById(R.id.download_event_picture_button);
+        mDownloadPicButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent photoPickerIntent = new Intent(Intent.ACTION_GET_CONTENT);
+                    photoPickerIntent.setType("image/*");
+                    startActivityForResult(photoPickerIntent, DOWNLOAD_PHOTO);
+                }
+        });
+
         return v;
+    }
+
+    private void updatePhotoView() {
+        if (mPhotoFile == null || !mPhotoFile.exists()) {
+            mEventPicture.setImageDrawable(null);
+        } else {
+            Bitmap bitmap = PictureUtils.getScaledBitmap(
+                    mPhotoFile.getPath(), getActivity());
+            mEventPicture.setImageBitmap(bitmap);
+        }
+    }
+
+    private void uploadPhoto(Intent data) {
+        Uri chosenImageUri = data.getData();
+        String imagePath = getRealPathFromURI_API19(getActivity(), chosenImageUri);
+        InputStream ims = getClass().getResourceAsStream(imagePath);
+        Bitmap bitmap = PictureUtils.getScaledBitmap(
+                imagePath, getActivity());
+//        Bitmap bitmap = BitmapFactory.decodeStream(ims);
+        mEventPicture.setImageBitmap(bitmap);
+    }
+
+    @TargetApi(Build.VERSION_CODES.KITKAT)
+    public static String getRealPathFromURI_API19(Context context, Uri uri){
+
+        String filePath = "";
+        String wholeID = DocumentsContract.getDocumentId(uri);
+
+        // Split at colon, use second item in the array
+        String id = wholeID.split(":")[1];
+
+        String[] column = { MediaStore.Images.Media.DATA };
+
+        // where id is equal to
+        String sel = MediaStore.Images.Media._ID + "=?";
+
+        Cursor cursor = context.getContentResolver().query(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                column, sel, new String[]{ id }, null);
+
+        int columnIndex = cursor.getColumnIndex(column[0]);
+
+        if (cursor.moveToFirst()) {
+            filePath = cursor.getString(columnIndex);
+        }
+        cursor.close();
+        return filePath;
     }
 
     public static EventFragment newInstance(UUID eventID){
@@ -178,6 +279,36 @@ public class EventFragment extends Fragment{
                     .getSerializableExtra(DatePickerFragment.EXTRA_DATE);
             mEvent.setDate(date);
             updateDate();
+        }
+        else if (requestCode == REQUEST_PHOTO) {
+            if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                updatePhotoView();
+            }
+            else{
+                ActivityCompat.requestPermissions(getActivity(), new String[]
+                        {Manifest.permission.CAMERA}, 0);
+                if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.CAMERA) ==
+                        PackageManager.PERMISSION_GRANTED) {
+                    updatePhotoView();
+                }
+            }
+        }
+        else if (requestCode == DOWNLOAD_PHOTO) {
+
+            if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                    PackageManager.PERMISSION_GRANTED) {
+                uploadPhoto(data);
+            }
+            else {
+                ActivityCompat.requestPermissions(getActivity(), new String[]
+                        {Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.READ_EXTERNAL_STORAGE}, 0);
+                if (ContextCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE) ==
+                        PackageManager.PERMISSION_GRANTED) {
+                    uploadPhoto(data);
+                }
+            }
         }
     }
 

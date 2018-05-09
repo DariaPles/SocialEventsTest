@@ -5,9 +5,11 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Environment;
 
 import com.dariapro.socialevent.EventDBSchema.EventTable;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -121,5 +123,14 @@ public class EventLab {
 //            event.setSolved(i%2 == 0);
 //            mEvents.add(event);
 //        }
+    }
+
+    public File getPhotoFile(Event event) {
+        File externalFilesDir = mContext
+                .getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        if (externalFilesDir == null) {
+            return null;
+        }
+        return new File(externalFilesDir, event.getPhotoFilename());
     }
 }

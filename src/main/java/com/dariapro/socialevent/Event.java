@@ -57,4 +57,8 @@ public class Event {
     public void setSolved(boolean solved) {
         this.mSolved = solved;
     }
+
+    public String getPhotoFilename(){
+        return "IMG" + getId().toString() + ".jpg";
+    }
 }
